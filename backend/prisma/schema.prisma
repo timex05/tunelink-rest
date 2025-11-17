@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String?   // Null wenn OAuth
+  nickname          String    @unique
+  image             String?
+  dummyProfileType  String 
+  description       String?
+  oauthID           String?   @unique
+  role              Role      @default(USER)
+  isNewsLetter      Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  linktrees     Linktree[]  @relation("owner")
+  likes         Like[]      @relation("liker")
+  comments      Comment[]   @relation("commenter")
+  followers     Following[] @relation("following")
+  following     Following[] @relation("follower")
+}
+
+model Linktree {
+  id              String    @id @default(cuid())
+  title           String
+  interpret       String
+  album           String?
+  description     String?
+  cover           String?
+  isPublic        Boolean   @default(true)
+  releaseDate     DateTime
+  clicks          Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Owner relation
+  owner           User      @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId         String
+
+  // Music Platform URLs
+  amazonmusicUrl  String?
+  applemusicUrl   String?
+  soundcloudUrl   String?
+  spotifyUrl      String?
+  youtubeUrl      String?
+  youtubemusicUrl String?
+  ytId            String?   // Optional YouTube video ID for embedding
+
+  // Relations
+  likes          Like[]
+  comments       Comment[]
+}
+
+model Like {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  user        User      @relation("liker", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  linktree    Linktree  @relation(fields: [linktreeId], references: [id], onDelete: Cascade)
+  linktreeId  String
+
+  @@unique([userId, linktreeId])
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  message     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  owner       User      @relation("commenter", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+  
+  linktree    Linktree  @relation(fields: [linktreeId], references: [id], onDelete: Cascade)
+  linktreeId  String
+}
+
+model Following {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  user        User      @relation("following", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  follower    User      @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId  String
+
+  @@unique([userId, followerId])
+}
+
+model Newsletter {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  createdAt   DateTime  @default(now())
+}
