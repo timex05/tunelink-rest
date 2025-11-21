@@ -16,13 +16,18 @@ enum Role {
   ADMIN
 }
 
+enum DummyProfileType {
+  MALE
+  FEMALE
+}
+
 model User {
   id                String    @id @default(cuid())
   email             String    @unique
   password          String?   // Null wenn OAuth
   nickname          String    @unique
   image             String?
-  dummyProfileType  String 
+  dummyProfileType  DummyProfileType @default(MALE) 
   description       String?
   oauthID           String?   @unique
   role              Role      @default(USER)
@@ -87,7 +92,6 @@ model Comment {
   id          String    @id @default(cuid())
   message     String
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 
   // Relations
   owner       User      @relation("commenter", fields: [ownerId], references: [id], onDelete: Cascade)

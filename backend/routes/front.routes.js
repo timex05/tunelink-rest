@@ -154,7 +154,6 @@ router.get('/front', async (req, res) => {
         album: t.album || null,
         description: t.description,
         cover: t.cover || null,
-        isPublic: t.isPublic,
         releaseDate: t.releaseDate,
         amazonmusicUrl: t.amazonmusicUrl || null,
         applemusicUrl: t.applemusicUrl || null,
@@ -169,7 +168,10 @@ router.get('/front', async (req, res) => {
         owner: {
           id: (t.owner && t.owner.id) || t.ownerId || null,
           name: (t.owner && t.owner.nickname) || t.ownerName || null,
-          profileImage: (t.owner && t.owner.image) || t.ownerImage || null
+          profileImg: {
+            url: (t.owner && t.owner.image) || t.ownerImage || null,
+            default: (t.owner && t.owner.dummyProfileType) || t.dummyProfileType || null
+          }
         }
       }));
     }

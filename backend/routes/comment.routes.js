@@ -64,7 +64,10 @@ router.get('/tree', auth, async (req, res) => {
       owner: {
         id: (t.owner && t.owner.id) || t.ownerId || null,
         name: (t.owner && t.owner.nickname) || t.ownerName || null,
-        profileImage: (t.owner && t.owner.image) || t.ownerImage || null
+        profileImg: {
+          url: (t.owner && t.owner.image) || t.ownerImage || null,
+          default: (t.owner && t.owner.dummyProfileType) || t.dummyProfileType || null
+        }
       }
     }));
     

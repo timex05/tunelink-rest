@@ -94,8 +94,14 @@ router.get('/me', auth, async (req, res) => {
       user: {
         id: user.id,
         name: user.nickname,
-        profileImage: user.image || null,
-        email: user.email
+        profileImg: {
+          url: user.image,
+          default: user.dummyProfileType
+        },
+        email: user.email,
+        createdAt: user.createdAt,
+        isNewsLetter: user.isNewsLetter,
+        description: user.description
       }
     });
   } catch (error) {
@@ -112,8 +118,10 @@ router.put('/me', auth, async (req, res) => {
     if (user.name) updateData.nickname = user.name;
     if (user.email) updateData.email = user.email;
     if (user.password) updateData.password = await bcrypt.hash(user.password, 10);
-    if (user.profileImg !== undefined) updateData.image = user.profileImg;
-    if (user.newsLetter !== undefined) updateData.isNewsLetter = user.newsLetter;
+    if (user.profileImg.url !== undefined) updateData.image = user.profileImg.url;
+    if (user.isNewsLetter !== undefined) updateData.isNewsLetter = user.isNewsLetter;
+    if (user.description !== undefined) updateData.description = user.description;
+    if (user.profileImg.default !== undefined) updateData.dummyProfileType = user.profileImg.default;
 
     await prisma.user.update({
       where: { id: req.user.userId },
@@ -138,7 +146,12 @@ router.get('/:id', auth, async (req, res) => {
       user: {
         id: user.id,
         name: user.nickname,
-        profileImage: user.image || null
+        description: user.description,
+        createdAt: user.createdAt,
+        profileImg: {
+          url: user.image,
+          default: user.dummyProfileType
+        }
       }
     });
   } catch (error) {
@@ -150,7 +163,7 @@ router.get('/:id/tree', async (req, res) => {
   try {
     // Find all linktrees that belong to the user with id = req.params.id
     const trees = await prisma.linktree.findMany({
-      where: { ownerId: req.params.id },
+      where: { ownerId: req.params.id, isPublic: true },
       include: {
         _count: { select: { likes: true, comments: true } },
         owner: true
@@ -178,7 +191,6 @@ router.get('/:id/tree', async (req, res) => {
       album: t.album || null,
       description: t.description,
       cover: t.cover || null,
-      isPublic: t.isPublic,
       releaseDate: t.releaseDate,
       urls: {
         amazonmusic: t.amazonmusicUrl || null,
@@ -195,7 +207,10 @@ router.get('/:id/tree', async (req, res) => {
       owner: {
         id: (t.owner && t.owner.id) || t.ownerId || null,
         name: (t.owner && t.owner.nickname) || t.ownerName || null,
-        profileImage: (t.owner && t.owner.image) || t.ownerImage || null
+        profileImage: {
+          url: (t.owner && t.owner.image) || t.ownerImage || null,
+          default: (t.owner && t.owner.dummyProfileType) || t.dummyProfileType || null
+        }
       }
     }));
 

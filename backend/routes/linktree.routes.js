@@ -12,7 +12,7 @@ router.get('/:id', async (req, res) => {
     
 
     const tree = await prisma.linktree.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id, isPublic: true },
       include: {
         owner: true,
         _count: {
@@ -23,6 +23,11 @@ router.get('/:id', async (req, res) => {
         },
       },
     });
+
+    if(!tree){
+      res.status(404).json({ message: "Tree not found." });
+      return;
+    }
     
     // Increment clicks
     await prisma.linktree.update({
@@ -65,7 +70,15 @@ router.get('/:id', async (req, res) => {
         ytId: tree.ytId || null, 
         clicks: tree.clicks, 
         likes: { count: tree._count.likes, liked: userLiked}, 
-        comments: tree._count.comments
+        comments: tree._count.comments,
+        owner: {
+          id: (tree.owner && tree.owner.id) || tree.ownerId || null,
+          name: (tree.owner && tree.owner.nickname) || tree.ownerName || null,
+          profileImg: {
+            url: (tree.owner && tree.owner.image) || tree.ownerImage || null,
+            default: (tree.owner && tree.owner.dummyProfileType) ||  tree.dummyProfileType || null
+          }
+        }
       }
     }
 
@@ -129,7 +142,10 @@ router.get('/', auth, async (req, res) => {
       owner: {
         id: (t.owner && t.owner.id) || t.ownerId || null,
         name: (t.owner && t.owner.nickname) || t.ownerName || null,
-        profileImage: (t.owner && t.owner.image) || t.ownerImage || null
+        profileImg: {
+          url: (t.owner && t.owner.image) || t.ownerImage || null,
+          default: (t.owner && t.owner.dummyProfileType) ||  t.dummyProfileType || null
+        }
       }
     }));
     res.status(200).json(result);
@@ -241,7 +257,10 @@ router.get('/:id/comments', async (req, res) => {
       owner: {
         id: (c.owner && c.owner.id) || c.ownerId || null,
         name: (c.owner && c.owner.nickname) || c.ownerName || null,
-        profileImage: (c.owner && c.owner.image) || c.ownerImage || null
+        profileImg: {
+          url: (c.owner && c.owner.image) || c.ownerImage || null,
+          default: (c.owner && c.owner.dummyProfileType) ||  c.dummyProfileType || null
+        }
       }
     }))
 
