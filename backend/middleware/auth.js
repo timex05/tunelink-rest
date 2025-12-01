@@ -1,12 +1,33 @@
 const { verifyToken, extractToken } = require('../utils/jwt');
 
-module.exports = (req, res, next) => {
+
+
+const needsAuth = (req, res, next) => {
   try {
-    const token = extractToken(req.headers.authorization);
+    const token = extractToken(req);
     const decoded = verifyToken(token);
-    req.user = decoded;
+    
+    req.userId = decoded.userId;
+    console.log(req.userId);
     next();
   } catch (error) {
+    console.error(error);
     res.status(401).json({ message: 'Authentication failed' });
   }
 };
+
+const canAuth = (req, res, next) => {
+  try {
+    const token = extractToken(req);
+    const decoded = verifyToken(token);
+    
+    req.userId = decoded.userId;
+    
+  } catch (error) {
+  } finally {
+    next();
+  }
+}
+
+
+module.exports = { needsAuth, canAuth };

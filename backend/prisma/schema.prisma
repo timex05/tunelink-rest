@@ -39,8 +39,6 @@ model User {
   linktrees     Linktree[]  @relation("owner")
   likes         Like[]      @relation("liker")
   comments      Comment[]   @relation("commenter")
-  followers     Following[] @relation("following")
-  following     Following[] @relation("follower")
 }
 
 model Linktree {
@@ -99,20 +97,6 @@ model Comment {
   
   linktree    Linktree  @relation(fields: [linktreeId], references: [id], onDelete: Cascade)
   linktreeId  String
-}
-
-model Following {
-  id          String    @id @default(cuid())
-  createdAt   DateTime  @default(now())
-
-  // Relations
-  user        User      @relation("following", fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  
-  follower    User      @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-  followerId  String
-
-  @@unique([userId, followerId])
 }
 
 model Newsletter {

@@ -1,10 +1,10 @@
 const express = require('express');
-const router = express.Router();
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
-const auth = require('../middleware/auth');
+const { prisma } = require('../config/prisma');
+const { needsAuth, canAuth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const { generateToken, extractToken, invalidateToken } = require('../utils/jwt');
+
+const router = express.Router();
 
 // POST /api/users - User registrieren
 router.post('/', async (req, res) => {
@@ -30,6 +30,7 @@ router.post('/', async (req, res) => {
 
     res.status(200).json({ message: "User created." });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Internal Error" });
   }
 });
@@ -58,12 +59,13 @@ router.post('/auth', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Internal Error." });
   }
 });
 
 // DELETE /api/users/auth - User ausloggen
-router.delete('/auth', auth, async (req, res) => {
+router.delete('/auth', needsAuth, async (req, res) => {
   try {
     // Accept token either in request body { token } or in Authorization header
     const tokenFromBody = req.body && req.body.token;
@@ -84,10 +86,10 @@ router.delete('/auth', auth, async (req, res) => {
 });
 
 // GET /api/users/me - Eigene User-Daten abrufen
-router.get('/me', auth, async (req, res) => {
+router.get('/me', needsAuth, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.userId }
+      where: { id: req.userId }
     });
 
     res.status(200).json({
@@ -101,16 +103,18 @@ router.get('/me', auth, async (req, res) => {
         email: user.email,
         createdAt: user.createdAt,
         isNewsLetter: user.isNewsLetter,
-        description: user.description
+        description: user.description,
+        permissions: { canEdit: true }
       }
     });
   } catch (error) {
+    console.error(error);
     res.status(400).json({ message: "Invalid token." });
   }
 });
 
 // PUT /api/users/me - Eigene Daten ändern
-router.put('/me', auth, async (req, res) => {
+router.put('/me', needsAuth, async (req, res) => {
   try {
     const { user } = req.body;
     const updateData = {};
@@ -124,7 +128,7 @@ router.put('/me', auth, async (req, res) => {
     if (user.profileImg.default !== undefined) updateData.dummyProfileType = user.profileImg.default;
 
     await prisma.user.update({
-      where: { id: req.user.userId },
+      where: { id: req.userId },
       data: updateData
     });
 
@@ -135,7 +139,7 @@ router.put('/me', auth, async (req, res) => {
 });
 
 // GET /api/users/:id - User aufrufen
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id }

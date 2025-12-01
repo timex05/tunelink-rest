@@ -1,9 +1,9 @@
 const express = require('express');
-const router = express.Router();
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
-const auth = require('../middleware/auth');
+const { prisma } = require('../config/prisma');
+const { needsAuth, canAuth} = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+
+const router = express.Router();
 
 // POST /api/newsletter - Newsletter abonnieren
 router.post('/', async (req, res) => {

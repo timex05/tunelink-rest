@@ -1,12 +1,12 @@
 const express = require('express');
-const router = express.Router();
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
-const auth = require('../middleware/auth');
+const { prisma } = require('../config/prisma');
+const { needsAuth, canAuth} = require('../middleware/auth');
 const { extractToken, verifyToken, getAuthenticatedUserId } = require('../utils/jwt');
 
+const router = express.Router();
+
 // GET /api/tree/:id - Einzelnen Tree abrufen
-router.get('/:id', async (req, res) => {
+router.get('/:id', canAuth,  async (req, res) => {
   try {
     // Try to extract authenticated user (optional)
     
@@ -59,6 +59,7 @@ router.get('/:id', async (req, res) => {
         description: tree.description, 
         cover: tree.cover || null, 
         releaseDate: tree.releaseDate, 
+        ytId: tree.ytId || null, 
         urls: {
           amazonmusic: tree.amazonmusicUrl || null, 
           applemusic: tree.applemusicUrl || null, 
@@ -67,10 +68,11 @@ router.get('/:id', async (req, res) => {
           youtube: tree.youtubeUrl || null, 
           youtubemusic: tree.youtubemusicUrl || null
         },
-        ytId: tree.ytId || null, 
-        clicks: tree.clicks, 
-        likes: { count: tree._count.likes, liked: userLiked}, 
-        comments: tree._count.comments,
+        analytics: {
+          clicks: tree.clicks, 
+          likes: { count: tree._count.likes, liked: userLiked }, 
+          comments: tree._count.comments
+        },
         owner: {
           id: (tree.owner && tree.owner.id) || tree.ownerId || null,
           name: (tree.owner && tree.owner.nickname) || tree.ownerName || null,
@@ -78,7 +80,8 @@ router.get('/:id', async (req, res) => {
             url: (tree.owner && tree.owner.image) || tree.ownerImage || null,
             default: (tree.owner && tree.owner.dummyProfileType) ||  tree.dummyProfileType || null
           }
-        }
+        },
+        permissions: (req.userId && req.userId == t.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
       }
     }
 
@@ -89,10 +92,10 @@ router.get('/:id', async (req, res) => {
 });
 
 // GET /api/tree - Alle eigenen Trees abrufen
-router.get('/', auth, async (req, res) => {
+router.get('/', needsAuth, async (req, res) => {
   try {
     const trees = await prisma.linktree.findMany({
-      where: { ownerId: req.user.userId },
+      where: { ownerId: req.userId },
       include: {
         _count: {
           select: {
@@ -105,7 +108,7 @@ router.get('/', auth, async (req, res) => {
     });
 
     let likedSet = null;
-    if (req.user.id) {
+    if (req.userId) {
       const treeIds = trees.map(t => t.id).filter(Boolean);
       if (treeIds.length > 0) {
         const likes = await prisma.like.findMany({
@@ -125,8 +128,8 @@ router.get('/', auth, async (req, res) => {
       album: t.album || null,
       description: t.description,
       cover: t.cover || null,
-      isPublic: t.isPublic,
       releaseDate: t.releaseDate,
+      ytId: t.ytId || null,
       urls: {
         amazonmusic: t.amazonmusicUrl || null,
         applemusic: t.applemusicUrl || null,
@@ -135,10 +138,11 @@ router.get('/', auth, async (req, res) => {
         youtube: t.youtubeUrl || null,
         youtubemusic: t.youtubemusicUrl || null,
       },
-      ytId: t.ytId || null,
-      clicks: t.clicks || 0,
-      likes: { count: (t._count && t._count.likes) || t.likes || 0, liked: likedSet ? likedSet.has(t.id) : null},
-      comments: (t._count && t._count.comments) || t.comments || 0,
+      analytics: {
+        clicks: t.clicks || 0,
+        likes: { count: (t._count && t._count.likes) || t.likes || 0, liked: likedSet ? likedSet.has(t.id) : null},
+        comments: (t._count && t._count.comments) || t.comments || 0
+      },
       owner: {
         id: (t.owner && t.owner.id) || t.ownerId || null,
         name: (t.owner && t.owner.nickname) || t.ownerName || null,
@@ -146,20 +150,22 @@ router.get('/', auth, async (req, res) => {
           url: (t.owner && t.owner.image) || t.ownerImage || null,
           default: (t.owner && t.owner.dummyProfileType) ||  t.dummyProfileType || null
         }
-      }
+      },
+      permissions: (req.userId == t.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
     }));
     res.status(200).json(result);
   } catch (error) {
+    console.error(error);
     res.status(400).json({ message: error.message });
   }
 });
 
 // POST /api/tree - Tree erstellen
-router.post('/', auth, async (req, res) => {
+router.post('/', needsAuth, async (req, res) => {
   try {
     const treeData = {
       ...req.body,
-      ownerId: req.user.userId
+      ownerId: req.userId
     };
     await prisma.linktree.create({ data: treeData });
     res.status(200).json({ message: 'Linktree erfolgreich erstellt' });
@@ -169,13 +175,13 @@ router.post('/', auth, async (req, res) => {
 });
 
 // PUT /api/tree/:id - Tree bearbeiten
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', needsAuth, async (req, res) => {
   try {
     const tree = await prisma.linktree.findUnique({
       where: { id: req.params.id }
     });
     
-    if (!tree || tree.ownerId !== req.user.userId) {
+    if (!tree || tree.ownerId !== req.userId) {
       throw new Error('Unauthorized');
     }
 
@@ -191,13 +197,13 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // DELETE /api/tree/:id - Tree löschen
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', needsAuth, async (req, res) => {
   try {
     const tree = await prisma.linktree.findUnique({
       where: { id: req.params.id }
     });
     
-    if (!tree || tree.ownerId !== req.user.userId) {
+    if (!tree || tree.ownerId !== req.userId) {
       throw new Error('Unauthorized');
     }
 
@@ -212,11 +218,11 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // PUT /api/tree/:id/likes - Tree liken
-router.put('/:id/likes', auth, async (req, res) => {
+router.put('/:id/likes', needsAuth, async (req, res) => {
   try {
     await prisma.like.create({
       data: {
-        userId: req.user.userId,
+        userId: req.userId,
         linktreeId: req.params.id
       }
     });
@@ -227,11 +233,11 @@ router.put('/:id/likes', auth, async (req, res) => {
 });
 
 // DELETE /api/tree/:id/likes - Tree like löschen
-router.delete('/:id/likes', auth, async (req, res) => {
+router.delete('/:id/likes', needsAuth, async (req, res) => {
   try {
     await prisma.like.deleteMany({
       where: {
-        userId: req.user.userId,
+        userId: req.userId,
         linktreeId: req.params.id
       }
     });
@@ -242,7 +248,7 @@ router.delete('/:id/likes', auth, async (req, res) => {
 });
 
 // GET /api/tree/:id/comments - Kommentare abrufen
-router.get('/:id/comments', async (req, res) => {
+router.get('/:id/comments', canAuth,  async (req, res) => {
   try {
     const comments = await prisma.comment.findMany({
       where: { linktreeId: req.params.id },
@@ -250,7 +256,8 @@ router.get('/:id/comments', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    comments = comments.map(c => ({
+    let result = {};
+    result.commentlist = comments.map(c => ({
       id: c.id,
       message: c.message,
       createdAt: c.createdAt,
@@ -261,24 +268,26 @@ router.get('/:id/comments', async (req, res) => {
           url: (c.owner && c.owner.image) || c.ownerImage || null,
           default: (c.owner && c.owner.dummyProfileType) ||  c.dummyProfileType || null
         }
-      }
+      },
+      permissions: (req.userId && req.userId == c.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
+
     }))
 
-    let result = {};
 
-    res.status(200).json(comments);
+
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // PUT /api/tree/:id/comments - Tree kommentieren
-router.put('/:id/comments', auth, async (req, res) => {
+router.put('/:id/comments', needsAuth, async (req, res) => {
   try {
     await prisma.comment.create({
       data: {
         message: req.body.message,
-        ownerId: req.user.userId,
+        ownerId: req.userId,
         linktreeId: req.params.id
       }
     });
@@ -289,13 +298,13 @@ router.put('/:id/comments', auth, async (req, res) => {
 });
 
 // DELETE /api/tree/:id/comments/:commentId - Tree Kommentar löschen
-router.delete('/:id/comments/:commentId', auth, async (req, res) => {
+router.delete('/:id/comments/:commentId', needsAuth, async (req, res) => {
   try {
     const comment = await prisma.comment.findUnique({
       where: { id: req.params.commentId }
     });
     
-    if (!comment || comment.ownerId !== req.user.userId) {
+    if (!comment || comment.ownerId !== req.userId) {
       throw new Error('Unauthorized');
     }
 

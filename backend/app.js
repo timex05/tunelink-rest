@@ -1,16 +1,16 @@
-import express from "express";
-import morgan from "morgan";
-import helmet from "helmet";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import { prisma } from "./config/prisma.js";
+const express = require("express");
+const morgan = require("morgan");
+const helmet = require("helmet");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const { prisma } = require("./config/prisma");
 
-import userRoutes from "./routes/user.routes.js";
-import treeRoutes from "./routes/linktree.routes.js";
-import frontRoutes from "./routes/front.routes.js";
-import likeRoutes from "./routes/like.routes.js";
-import commentRoutes from "./routes/comment.routes.js";
-import newsletterRoutes from "./routes/newsletter.routes.js";
+const userRoutes = require("./routes/user.routes");
+const treeRoutes = require("./routes/linktree.routes");
+const frontRoutes = require("./routes/front.routes");
+const likeRoutes = require("./routes/like.routes");
+const commentRoutes = require("./routes/comment.routes");
+const newsletterRoutes = require("./routes/newsletter.routes");
 
 
 const app = express();
@@ -46,4 +46,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
-export default app;
+module.exports = app;

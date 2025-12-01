@@ -1,17 +1,17 @@
 const express = require('express');
+const { prisma } = require('../config/prisma');
+const { needsAuth, canAuth } = require('../middleware/auth');
+
 const router = express.Router();
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
-const auth = require('../middleware/auth');
 
 // GET /api/like/tree - Alle gelikete Trees
-router.get('/tree', auth, async (req, res) => {
+router.get('/tree', needsAuth, async (req, res) => {
   try {
     const likedTrees = await prisma.linktree.findMany({
       where: {
         likes: {
           some: {
-            userId: req.user.userId
+            userId: req.userId
           }
         }
       },
@@ -27,16 +27,15 @@ router.get('/tree', auth, async (req, res) => {
     });
 
     let likedSet = null;
-    if (getAuthenticatedUserId(req)) {
-      const treeIds = likedTrees.map(t => t.id).filter(Boolean);
-      if (treeIds.length > 0) {
-        const likes = await prisma.like.findMany({
-          where: { userId: currentUserId, linktreeId: { in: treeIds } },
-          select: { linktreeId: true }
-        });
-        likedSet = new Set(likes.map(l => l.linktreeId));
-      }
+    const treeIds = likedTrees.map(t => t.id).filter(Boolean);
+    if (treeIds.length > 0) {
+      const likes = await prisma.like.findMany({
+        where: { userId: currentUserId, linktreeId: { in: treeIds } },
+        select: { linktreeId: true }
+      });
+      likedSet = new Set(likes.map(l => l.linktreeId));
     }
+    
 
     // map trees to expected output shape
     const result = {}
@@ -47,8 +46,8 @@ router.get('/tree', auth, async (req, res) => {
       album: t.album || null,
       description: t.description,
       cover: t.cover || null,
-      isPublic: t.isPublic,
       releaseDate: t.releaseDate,
+      ytId: t.ytId || null,
       urls: {
         amazonmusic: t.amazonmusicUrl || null,
         applemusic: t.applemusicUrl || null,
@@ -57,10 +56,11 @@ router.get('/tree', auth, async (req, res) => {
         youtube: t.youtubeUrl || null,
         youtubemusic: t.youtubemusicUrl || null
       },
-      ytId: t.ytId || null,
-      clicks: t.clicks || 0,
-      likes: { count: (t._count && t._count.likes) || t.likes || 0, liked: likedSet ? likedSet.has(t.id) : null},
-      comments: (t._count && t._count.comments) || t.comments || 0,
+      analytics: {
+        clicks: t.clicks || 0,
+        likes: { count: (t._count && t._count.likes) || t.likes || 0, liked: likedSet ? likedSet.has(t.id) : null},
+        comments: (t._count && t._count.comments) || t.comments || 0
+      },
       owner: {
         id: (t.owner && t.owner.id) || t.ownerId || null,
         name: (t.owner && t.owner.nickname) || t.ownerName || null,
@@ -68,10 +68,12 @@ router.get('/tree', auth, async (req, res) => {
           url: (t.owner && t.owner.image) || t.ownerImage || null,
           default: (t.owner && t.owner.dummyProfileType) || t.dummyProfileType || null
         }
-      }
+      },
+      permissions: (req.userId == t.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
     }));
     res.status(200).json(result);
   } catch (error) {
+    console.log(error);
     res.status(400).json({ message: error.message });
   }
 });

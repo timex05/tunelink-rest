@@ -22,16 +22,11 @@ const verifyToken = (token) => {
 };
 
 // Token aus Authorization Header extrahieren
-const extractToken = (authHeader) => {
-  if (!authHeader) {
-    throw new Error('No authorization header');
+const extractToken = (req) => {
+  let { token } = req.body;
+  if(!token){
+    token = req.query.token;
   }
-
-  const [bearer, token] = authHeader.split(' ');
-  if (bearer !== 'Bearer' || !token) {
-    throw new Error('Invalid authorization format');
-  }
-
   return token;
 };
 
@@ -44,12 +39,9 @@ const invalidateToken = (token) => {
 const getAuthenticatedUserId = (req) => {
   let currentUserId = null;
   try {
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-      const token = extractToken(authHeader);
-      const decoded = verifyToken(token);
-      currentUserId =  decoded && decoded.userId ? decoded.userId : null;
-    }
+    const token = extractToken(req);
+    const decoded = verifyToken(token);
+    currentUserId =  decoded && decoded.userId ? decoded.userId : null;
   } catch (e) {
     // ignore - treat as unauthenticated
     return null;

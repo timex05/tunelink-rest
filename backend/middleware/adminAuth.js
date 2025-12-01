@@ -1,6 +1,5 @@
 const { verifyToken, extractToken } = require('../utils/jwt');
-const { PrismaClient } = require('../generated/prisma');
-const prisma = new PrismaClient();
+const { prisma } = require('../config/prisma');
 
 module.exports = async (req, res, next) => {
   try {
