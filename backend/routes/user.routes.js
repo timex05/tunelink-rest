@@ -233,7 +233,7 @@ router.post('/auth/google', async (req, res) => {
 
     // Prüfen ob User in deiner DB existiert
     const googleUser = await prisma.user.findUnique({
-      where: {oauthID: googleId}
+      where: {oauthId: googleId, oauthProvider: 'GOOGLE'}
     });
 
     if(googleUser){
@@ -264,7 +264,8 @@ router.post('/auth/google', async (req, res) => {
         email: email,
         nickname: name,
         image: picture,
-        oauthID: googleId
+        oauthId: googleId,
+        oauthProvider: 'GOOGLE'
       }
     });
 

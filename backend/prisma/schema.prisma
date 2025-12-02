@@ -21,6 +21,11 @@ enum DummyProfileType {
   FEMALE
 }
 
+enum AuthProvider {
+  GOOGLE
+  GITHUB
+}
+
 model User {
   id                String    @id @default(cuid())
   email             String    @unique
@@ -29,7 +34,8 @@ model User {
   image             String?
   dummyProfileType  DummyProfileType @default(MALE) 
   description       String?
-  oauthID           String?   @unique
+  oauthId           String?   
+  oauthProvider     AuthProvider?
   role              Role      @default(USER)
   isNewsLetter      Boolean   @default(false)
   createdAt         DateTime  @default(now())
@@ -39,6 +45,8 @@ model User {
   linktrees     Linktree[]  @relation("owner")
   likes         Like[]      @relation("liker")
   comments      Comment[]   @relation("commenter")
+
+  @@unique([oauthId, oauthProvider])
 }
 
 model Linktree {
