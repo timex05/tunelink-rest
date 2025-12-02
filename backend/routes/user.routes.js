@@ -4,6 +4,10 @@ const { needsAuth, canAuth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const { generateToken, extractToken, invalidateToken } = require('../utils/jwt');
 
+const { OAuth2Client } = require("google-auth-library");
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+
 const router = express.Router();
 
 // POST /api/users - User registrieren
@@ -66,23 +70,7 @@ router.post('/auth', async (req, res) => {
 
 // DELETE /api/users/auth - User ausloggen
 router.delete('/auth', needsAuth, async (req, res) => {
-  try {
-    // Accept token either in request body { token } or in Authorization header
-    const tokenFromBody = req.body && req.body.token;
-    const token = tokenFromBody || extractToken(req.headers.authorization);
-
-    if (!token) {
-      return res.status(400).json({ message: "No token provided." });
-    }
-
-    // Stateless invalidation: re-sign the payload with expiresIn: 0
-    invalidateToken(token);
-
-    // Instruct client to remove token locally as well
     res.status(200).json({ message: "Logged out successfully" });
-  } catch (error) {
-    res.status(400).json({ message: "Invalid Token." });
-  }
 });
 
 // GET /api/users/me - Eigene User-Daten abrufen
@@ -223,6 +211,81 @@ router.get('/:id/tree', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Internal Error" });
   }
+});
+
+router.post('/auth/google', async (req, res) => {
+  const { googleToken } = req.body;
+  try {
+    // Google ID Token prüfen
+    const ticket = await googleClient.verifyIdToken({
+      idToken: googleToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    // Google liefert User-Infos
+    const payload = ticket.getPayload();
+
+    // Google User-Daten
+    const googleId = payload.sub;
+    const email = payload.email;
+    const name = payload.name;
+    const picture = payload.picture;
+
+    // Prüfen ob User in deiner DB existiert
+    const googleUser = await prisma.user.findUnique({
+      where: {oauthID: googleId}
+    });
+
+    if(googleUser){
+      const token = generateToken(googleUser.id);
+      res.status(200).json({
+        token: {value: token, validInMinutes: 1440 }, // 24 hours 
+        user: {
+          id: googleUser.id,
+          name: googleUser.nickname,
+          profileImg: googleUser.profileImg,
+          email: googleUser.email
+        }
+      });
+      return;
+    } 
+
+    const emailUser = await prisma.user.findUnique({
+      where: {email: email}
+    });
+
+    if(emailUser){
+      res.status(400).json({ message: "User exists with this Email adress." })
+      return;
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        email: email,
+        nickname: name,
+        image: picture,
+        oauthID: googleId
+      }
+    });
+
+    const token = generateToken(user.id);
+    res.status(200).json({
+      token: {value: token, validInMinutes: 1440 }, // 24 hours 
+      user: {
+        id: user.id,
+        name: user.nickname,
+        profileImg: user.profileImg,
+        email: user.email
+      }
+    });
+    return;
+
+  } catch (err) {
+    console.error(err);
+    return res.status(401).json({ error: "Google token invalid" });
+  }
+
+
 });
 
 module.exports = router;

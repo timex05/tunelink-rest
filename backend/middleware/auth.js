@@ -8,6 +8,7 @@ const needsAuth = (req, res, next) => {
     const decoded = verifyToken(token);
     
     req.userId = decoded.userId;
+    req.token = token;
     console.log(req.userId);
     next();
   } catch (error) {

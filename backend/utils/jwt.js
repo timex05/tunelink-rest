@@ -33,7 +33,7 @@ const extractToken = (req) => {
 // Token ungültig machen
 const invalidateToken = (token) => {
   const payload = jwt.decode(token);
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: 0 });
+  return jwt.sign(payload, JWT_SECRET, { exp: 0 });
 };
 
 const getAuthenticatedUserId = (req) => {
