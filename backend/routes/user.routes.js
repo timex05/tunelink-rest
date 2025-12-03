@@ -1,7 +1,7 @@
 const express = require('express');
 const { prisma } = require('../utils/prisma');
 const { needsAuth, canAuth } = require('../middleware/auth');
-const bcrypt = require('bcryptjs');
+const { encryptPassword, comparePassword } = require('../utils/password');
 const { generateToken, extractToken, invalidateToken } = require('../utils/jwt');
 
 const { OAuth2Client } = require("google-auth-library");
@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: "Email exists already." });
     }
 
-    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const hashedPassword = await encryptPassword(user.password);
     
     await prisma.user.create({
       data: {
@@ -52,7 +52,7 @@ router.post('/auth', async (req, res) => {
       where: { email: credentials.email } 
     });
     
-    if (!user || !(await bcrypt.compare(credentials.password, user.password))) {
+    if (!user || !(await comparePassword(credentials.password, user.password))) {
       return res.status(400).json({ message: "Invalid credentials." });
     }
 
@@ -114,7 +114,7 @@ router.put('/me', needsAuth, async (req, res) => {
     
     if (user.name) updateData.nickname = user.name;
     if (user.email) updateData.email = user.email;
-    if (user.password) updateData.password = await bcrypt.hash(user.password, 10);
+    if (user.password) updateData.password = await encryptPassword(user.password);
     if (user.profileImg.url !== undefined) updateData.image = user.profileImg.url;
     if (user.isNewsLetter !== undefined) updateData.isNewsLetter = user.isNewsLetter;
     if (user.description !== undefined) updateData.description = user.description;
@@ -324,7 +324,7 @@ router.post('/auth/forgot', needsAuth, async (req, res) => {
   const { password } = req.body;
   
   try{
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await encryptPassword(password);
     await prisma.user.update({
       where: { id: req.userid },
       data: {
