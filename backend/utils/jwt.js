@@ -4,11 +4,11 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '24h';
 
 // Token generieren
-const generateToken = (userId) => {
+const generateToken = (userId, expiresIn) => {
   return jwt.sign(
     { userId },
     JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
+    { expiresIn: expiresIn || JWT_EXPIRES_IN }
   );
 };
 
@@ -36,23 +36,9 @@ const invalidateToken = (token) => {
   return jwt.sign(payload, JWT_SECRET, { exp: 0 });
 };
 
-const getAuthenticatedUserId = (req) => {
-  let currentUserId = null;
-  try {
-    const token = extractToken(req);
-    const decoded = verifyToken(token);
-    currentUserId =  decoded && decoded.userId ? decoded.userId : null;
-  } catch (e) {
-    // ignore - treat as unauthenticated
-    return null;
-  }
-  return currentUserId;
-}
-
 module.exports = {
   generateToken,
   verifyToken,
   extractToken,
-  invalidateToken,
-  getAuthenticatedUserId
+  invalidateToken
 };
