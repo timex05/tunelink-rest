@@ -317,11 +317,7 @@ router.get('/auth/forgot', async (req, res) => {
     return;
   }
   console.error(result.error);
-  res.status(500).json({ message: 'Could not send Mail.' });
-
-  
-
-  
+  res.status(500).json({ message: 'Could not send Mail.' });  
 });
 
 router.post('/auth/forgot', needsAuth, async (req, res) => {
