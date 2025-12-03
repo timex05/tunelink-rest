@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const { prisma } = require("./config/prisma");
+const { prisma } = require("./utils/prisma");
 
 const userRoutes = require("./routes/user.routes");
 const treeRoutes = require("./routes/linktree.routes");

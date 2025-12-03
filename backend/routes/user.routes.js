@@ -292,8 +292,8 @@ router.post('/auth/google', async (req, res) => {
   }
 });
 
-router.get('/auth/forgot', async (req, res) => {
-  const { email } = req.query;
+router.post('/auth/forgot', async (req, res) => {
+  const { email, resetUrl } = req.body;
   const user = await prisma.user.findFirst({ 
     where: { email: email, oauthId: null } 
   });
@@ -304,7 +304,7 @@ router.get('/auth/forgot', async (req, res) => {
   } 
 
   const token = generateToken(user.id, '15m');
-  const link = `${req.baseUrl}/auth/reset.html?token=${token}&email=${user.email}`
+  const link = `${resetUrl}?token=${token}&email=${user.email}`
 
   const result = await sendMail({
     to: user.email,
@@ -320,13 +320,13 @@ router.get('/auth/forgot', async (req, res) => {
   res.status(500).json({ message: 'Could not send Mail.' });  
 });
 
-router.post('/auth/forgot', needsAuth, async (req, res) => {
+router.post('/auth/reset', needsAuth, async (req, res) => {
   const { password } = req.body;
   
   try{
     const hashedPassword = await encryptPassword(password);
     await prisma.user.update({
-      where: { id: req.userid },
+      where: { id: req.userId },
       data: {
         password: hashedPassword
       }
