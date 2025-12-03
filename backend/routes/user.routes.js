@@ -1,5 +1,5 @@
 const express = require('express');
-const { prisma } = require('../config/prisma');
+const { prisma } = require('../utils/prisma');
 const { needsAuth, canAuth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const { generateToken, extractToken, invalidateToken } = require('../utils/jwt');
@@ -7,7 +7,9 @@ const { generateToken, extractToken, invalidateToken } = require('../utils/jwt')
 const { OAuth2Client } = require("google-auth-library");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const { createTransport } = require('nodemailer');
+const { sendMail } = require("../utils/mail");
+
+
 
 
 
@@ -297,35 +299,29 @@ router.get('/auth/forgot', async (req, res) => {
   });
 
   if(!user){
-    res.status(400).json({ message: "Given email is not assouciated with an account." })
+    res.status(400).json({ message: 'Given email is not assouciated with an account.' })
     return;
   } 
 
   const token = generateToken(user.id, '15m');
+  const link = `${req.baseUrl}/auth/reset.html?token=${token}&email=${user.email}`
+
+  const result = await sendMail({
+    to: user.email,
+    subject: 'Reset your Password',
+    html: `<h1>Reset Your Password</h1> ${link}` 
+  });
+
+  if(result.success){
+    res.status(200).json({ message: 'Mail send.' })
+    return;
+  }
+  console.error(result.error);
+  res.status(500).json({ message: 'Could not send Mail.' });
 
   
 
-  const transport = createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: 'timex385@gmail.com',
-      pass: 'lfqa apzt ahmx zozo'
-    }
-  });
-
-  transport.sendMail({
-    to: email,
-    subject: 'reset Password',
-    html: `<h1>Moin</h1>${process.env.FRONTEND_URL}/auth/reset.html?token=${token}&email=${user.email}`, 
-  }).then(() => {
-    console.log('send Mail');
-    res.status(200).json({ message: "Email send." });
-  }).catch((error) => {
-    console.error(error);
-    res.status(500).json({ message: "Could not send email." });
-  });
+  
 });
 
 router.post('/auth/forgot', needsAuth, async (req, res) => {
