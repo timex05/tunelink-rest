@@ -63,7 +63,6 @@ The server runs at `http://localhost:3000` by default.
 
 The API uses JWT for authentication. Tokens can be provided via:
 
-- `Authorization: Bearer <token>` header
 - `token` query parameter
 - `token` in the request body
 
