@@ -1,99 +1,86 @@
 # TuneLink Backend
 
-REST API Backend für TuneLink - eine Musik-Sharing-Plattform. Dieses Repository ist das Backend des [TuneLink Hauptprojektes](https://github.com/timex05/tunelink).
+REST API backend for TuneLink. This repository contains the backend only and is part of the TuneLink project: https://github.com/timex05/tunelink
 
-## Über das Projekt
+## About
 
-TuneLink Backend ist eine Express.js-basierte API, die die Verwaltung von Benutzern, Musik-Links, Likes und Kommentaren ermöglicht. Es verwendet Prisma ORM für die Datenverwaltung und MySQL als Datenbank.
+The TuneLink Backend is an Express.js API that manages users, music links (linktrees), likes and comments. It uses Prisma as the ORM and typically runs with a MySQL database.
 
 ## Features
 
-- Benutzerauthentifizierung mit JWT und Google OAuth
-- Verwaltung von Linktrees (Sammlungen von Musik-Links)
-- Social-Features wie Likes und Kommentare
-- Newsletter-Abonnement und Verwaltung
-- Sichere Passwort-Verwaltung mit bcryptjs
-- Email-Versand über Nodemailer
+- User authentication with JWT and Google OAuth
+- Management of linktrees (collections of music links)
+- Social features: likes and comments
+- Newsletter subscription and management
+- Secure password handling with bcryptjs
+- Email sending via Nodemailer
 
-## Voraussetzungen
+## Requirements
 
-- Node.js 16 oder höher
-- MySQL 8.0 oder höher
-- npm oder yarn
+- Node.js 16 or newer
+- MySQL 8.0 or newer
+- npm or yarn
 
 ## Installation
 
-```bash
+```powershell
 git clone https://github.com/timex05/tunelink-backend.git
 cd tunelink-backend
 
 npm install
 ```
 
-## Konfiguration
+## Configuration
 
-Erstelle eine `.env` Datei im Root-Verzeichnis:
+Create a `.env` file in the repository root. See `.env.example` for required variables.
 
-```env
-DATABASE_URL="mysql://user:password@localhost:3306/tunelink"
-JWT_SECRET="your-secret-key"
-GOOGLE_CLIENT_ID="your-google-client-id"
-MAIL_HOST="smtp.gmail.com"
-MAIL_PORT=465
-MAIL_ADRESS="your-email@gmail.com"
-MAIL_APP_PASSWORD="your-app-password"
-PORT=3000
-APP_NAME="TuneLink"
-```
-siehe `.env.example`
+## Database setup
 
-## Datenbank Setup
-
-```bash
+```powershell
 npx prisma migrate dev
 npx prisma studio
 ```
 
-## Server starten
+## Starting the server
 
 Development:
-```bash
+```powershell
 npm run dev
 ```
 
 Production:
-```bash
+```powershell
 npm start
 ```
 
-Der Server läuft unter `http://localhost:3000`
+The server runs at `http://localhost:3000` by default.
 
 ## API Endpoints
 
-siehe [Api Definition](https://docs.google.com/spreadsheets/d/1MEDP5qnZL-Q-OhINgiMkZLSXgupkBGDNylVWDLD2SP0/edit?usp=sharing)
+See the API definition: https://docs.google.com/spreadsheets/d/1MEDP5qnZL-Q-OhINgiMkZLSXgupkBGDNylVWDLD2SP0/edit?usp=sharing
 
-## Authentifizierung
+## Authentication
 
-Die API verwendet JWT Token für die Authentifizierung. Token können über folgende Methoden übergeben werden:
+The API uses JWT for authentication. Tokens can be provided via:
 
-- `token` Query Parameter
-- `token` im Request Body
+- `Authorization: Bearer <token>` header
+- `token` query parameter
+- `token` in the request body
 
-Die Token-Gültigkeitsdauer beträgt 24 Stunden.
+Tokens are typically valid for 24 hours.
 
-## Sicherheit
+## Security
 
-- Passwörter sind mit bcryptjs verschlüsselt
-- JWT Token für stateless Authentifizierung
-- CORS konfiguriert
-- Helmet für Security Headers
-- OAuth2 Google Integration
+- Passwords are hashed using `bcryptjs`.
+- JWT tokens provide stateless authentication.
+- CORS is configured.
+- `helmet` is used for security headers.
+- Google OAuth2 integration is available for sign-in.
 
-## Lizenz
+## License
 
 ISC
 
-## Siehe auch
+## See also
 
-- [TuneLink Frontend](https://github.com/timex05/tunelink-frontend)
-- [TuneLink Hauptprojekt](https://github.com/timex05/tunelink)
+- Main TuneLink project: https://github.com/timex05/tunelink
