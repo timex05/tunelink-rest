@@ -84,7 +84,7 @@ ISC
 
 ### Main
 
-- [Main TuneLink project](https://github.com/timex05/tunelink)
+- [Main TuneLink project](https://github.com/timex05/tunelink-main)
 
 ### Frontend
 
