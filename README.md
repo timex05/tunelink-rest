@@ -45,6 +45,7 @@ MAIL_APP_PASSWORD="your-app-password"
 PORT=3000
 APP_NAME="TuneLink"
 ```
+siehe `.env.example`
 
 ## Datenbank Setup
 
@@ -69,46 +70,12 @@ Der Server läuft unter `http://localhost:3000`
 
 ## API Endpoints
 
-### Benutzer (/api/user)
-- `POST /` - Registrierung
-- `POST /auth` - Login
-- `POST /auth/google` - Google OAuth Login
-- `POST /auth/forgot` - Passwort vergessen
-- `POST /auth/reset` - Passwort zurücksetzen
-- `GET /me` - Eigene Profildaten (Authentifizierung erforderlich)
-- `PUT /me` - Profildaten aktualisieren (Authentifizierung erforderlich)
-- `GET /:id` - Öffentliches Profil abrufen
-- `GET /:id/tree` - Benutzers Linktrees abrufen
-
-### Linktrees (/api/tree)
-- `GET /` - Eigene Linktrees (Authentifizierung erforderlich)
-- `GET /:id` - Linktree anschauen
-- `POST /` - Linktree erstellen (Authentifizierung erforderlich)
-- `PUT /:id` - Linktree bearbeiten (Authentifizierung erforderlich)
-- `DELETE /:id` - Linktree löschen (Authentifizierung erforderlich)
-- `PUT /:id/likes` - Linktree liken (Authentifizierung erforderlich)
-- `DELETE /:id/likes` - Like entfernen (Authentifizierung erforderlich)
-- `GET /:id/comments` - Kommentare abrufen
-- `PUT /:id/comments` - Kommentar hinzufügen (Authentifizierung erforderlich)
-- `DELETE /:id/comments/:commentId` - Kommentar löschen (Authentifizierung erforderlich)
-
-### Likes (/api/like)
-- `GET /tree` - Alle geliketen Linktrees (Authentifizierung erforderlich)
-
-### Kommentare (/api/comment)
-- `GET /tree` - Alle kommentierten Linktrees (Authentifizierung erforderlich)
-
-### Newsletter (/api/newsletter)
-- `POST /` - Newsletter abonnieren
-- `DELETE /:email` - Newsletter abbestellen
-- `GET /` - Newsletter-Abos abrufen (Admin erforderlich)
-- `PUT /` - Newsletter versenden (Admin erforderlich)
+siehe `https://docs.google.com/spreadsheets/d/1MEDP5qnZL-Q-OhINgiMkZLSXgupkBGDNylVWDLD2SP0/edit?usp=sharing`
 
 ## Authentifizierung
 
 Die API verwendet JWT Token für die Authentifizierung. Token können über folgende Methoden übergeben werden:
 
-- `Authorization: Bearer <token>` Header
 - `token` Query Parameter
 - `token` im Request Body
 
