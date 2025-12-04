@@ -1,4 +1,4 @@
-# TuneLink Backend
+# TuneLink Rest
 
 REST API backend for TuneLink. This repository contains the backend only and is part of the [TuneLink project](https://github.com/timex05/tunelink).
 
@@ -82,6 +82,15 @@ ISC
 
 ## See also
 
+### Main
+
 - [Main TuneLink project](https://github.com/timex05/tunelink)
-- [TuneLink Multi Page Application (mpa)](https://github.com/timex05/tunelink-mpa)
+
+### Frontend
+
+- [TuneLink Mulit Page Application (mpa)](https://github.com/timex05/tunelink-mpa)
 - [TuneLink Single Page Application (spa)](https://github.com/timex05/tunelink-spa)
+
+### Backend
+
+- [TuneLink REST-Api](https://github.com/timex05/tunelink-rest)
