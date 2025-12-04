@@ -70,7 +70,7 @@ Der Server läuft unter `http://localhost:3000`
 
 ## API Endpoints
 
-siehe `https://docs.google.com/spreadsheets/d/1MEDP5qnZL-Q-OhINgiMkZLSXgupkBGDNylVWDLD2SP0/edit?usp=sharing`
+siehe [Api Definition](https://docs.google.com/spreadsheets/d/1MEDP5qnZL-Q-OhINgiMkZLSXgupkBGDNylVWDLD2SP0/edit?usp=sharing)
 
 ## Authentifizierung
 
