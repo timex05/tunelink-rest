@@ -1,6 +1,6 @@
 # TuneLink Backend
 
-REST API backend for TuneLink. This repository contains the backend only and is part of the TuneLink project: https://github.com/timex05/tunelink
+REST API backend for TuneLink. This repository contains the backend only and is part of the [TuneLink project](https://github.com/timex05/tunelink).
 
 ## About
 
@@ -34,11 +34,11 @@ npm install
 
 Create a `.env` file in the repository root. See `.env.example` for required variables.
 
-## Database setup
+## Prisma setup
 
 ```powershell
 npx prisma migrate dev
-npx prisma studio
+npx prisma generate
 ```
 
 ## Starting the server
@@ -57,7 +57,7 @@ The server runs at `http://localhost:3000` by default.
 
 ## API Endpoints
 
-See the API definition: https://docs.google.com/spreadsheets/d/1MEDP5qnZL-Q-OhINgiMkZLSXgupkBGDNylVWDLD2SP0/edit?usp=sharing
+[API definition](https://docs.google.com/spreadsheets/d/1MEDP5qnZL-Q-OhINgiMkZLSXgupkBGDNylVWDLD2SP0/edit?usp=sharing)
 
 ## Authentication
 
@@ -83,4 +83,6 @@ ISC
 
 ## See also
 
-- Main TuneLink project: https://github.com/timex05/tunelink
+- [Main TuneLink project](https://github.com/timex05/tunelink)
+- [TuneLink Multi Page Application (mpa)](https://github.com/timex05/tunelink-mpa)
+- [TuneLink Single Page Application (spa)](https://github.com/timex05/tunelink-spa)
