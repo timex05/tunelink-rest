@@ -11,6 +11,7 @@ const frontRoutes = require("./routes/front.routes");
 const likeRoutes = require("./routes/like.routes");
 const commentRoutes = require("./routes/comment.routes");
 const newsletterRoutes = require("./routes/newsletter.routes");
+const spotifyRoutes = require("./routes/spotify.routes");
 
 
 const app = express();
@@ -34,6 +35,8 @@ app.use("/api/front", frontRoutes)
 app.use("/api/like", likeRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/newsletter", newsletterRoutes);
+app.use("/api/spotify", spotifyRoutes);
+
 
 // 🔁 Health Check
 app.get("/", (req, res) => {
