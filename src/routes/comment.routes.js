@@ -30,7 +30,7 @@ router.get('/tree', needsAuth, async (req, res) => {
     const treeIds = commentedTrees.map(t => t.id).filter(Boolean);
     if (treeIds.length > 0) {
       const likes = await prisma.like.findMany({
-        where: { userId: currentUserId, linktreeId: { in: treeIds } },
+        where: { userId: req.userId, linktreeId: { in: treeIds } },
         select: { linktreeId: true }
       });
       likedSet = new Set(likes.map(l => l.linktreeId));
@@ -45,7 +45,7 @@ router.get('/tree', needsAuth, async (req, res) => {
       album: t.album || null,
       description: t.description,
       cover: t.cover || null,
-      releaseDate: t.releaseDate,
+      releaseDate: t.releaseDate.getTime(),
       ytId: t.ytId || null,
       urls: {
         amazonmusic: t.amazonmusicUrl || null,

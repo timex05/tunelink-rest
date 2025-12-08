@@ -63,7 +63,7 @@ router.post('/auth', async (req, res) => {
       user: {
         id: user.id,
         name: user.nickname,
-        profileImage: user.image || null,
+        profileImg: user.image || null,
         email: user.email
       }
     });
@@ -156,9 +156,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.get('/:id/tree', async (req, res) => {
+router.get('/:id/tree', canAuth, async (req, res) => {
   try {
-    // Find all linktrees that belong to the user with id = req.params.id
     const trees = await prisma.linktree.findMany({
       where: { ownerId: req.params.id, isPublic: true },
       include: {
@@ -169,11 +168,11 @@ router.get('/:id/tree', async (req, res) => {
     });
     
     let likedSet = null;
-    if (getAuthenticatedUserId(req)) {
+    if (req.userId) {
       const treeIds = trees.map(t => t.id).filter(Boolean);
       if (treeIds.length > 0) {
         const likes = await prisma.like.findMany({
-          where: { userId: currentUserId, linktreeId: { in: treeIds } },
+          where: { userId: req.userId, linktreeId: { in: treeIds } },
           select: { linktreeId: true }
         });
         likedSet = new Set(likes.map(l => l.linktreeId));
@@ -181,14 +180,16 @@ router.get('/:id/tree', async (req, res) => {
     }
 
     let result = {};
-    result.treelist = trees.map(t => ({
+    result.treelist = trees.map(t => {
+      console.log(req.userId + "  " + t.ownerId);
+      return {
       id: t.id,
       title: t.title,
       interpret: t.interpret,
       album: t.album || null,
       description: t.description,
       cover: t.cover || null,
-      releaseDate: t.releaseDate,
+      releaseDate: new Date(t.releaseDate).toISOString(),
       urls: {
         amazonmusic: t.amazonmusicUrl || null,
         applemusic: t.applemusicUrl || null,
@@ -198,22 +199,27 @@ router.get('/:id/tree', async (req, res) => {
         youtubemusic: t.youtubemusicUrl || null,
       },
       ytId: t.ytId || null,
-      clicks: t.clicks || 0,
-      likes: { count: (t._count && t._count.likes) || t.likes || 0, liked: likedSet ? likedSet.has(t.id) : null},
-      comments: (t._count && t._count.comments) || t.comments || 0,
+      analytics: {
+        clicks: t.clicks || 0,
+        likes: { count: (t._count && t._count.likes) || t.likes || 0, liked: likedSet ? likedSet.has(t.id) : null},
+        comments: (t._count && t._count.comments) || t.comments || 0
+      },
       owner: {
         id: (t.owner && t.owner.id) || t.ownerId || null,
         name: (t.owner && t.owner.nickname) || t.ownerName || null,
-        profileImage: {
+        profileImg: {
           url: (t.owner && t.owner.image) || t.ownerImage || null,
           default: (t.owner && t.owner.dummyProfileType) || t.dummyProfileType || null
         }
-      }
-    }));
+      },
+      permissions: (req.userId && req.userId == t.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
+    }});
+    
 
     // Return an empty list if no trees found
     res.status(200).json(result);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Internal Error" });
   }
 });

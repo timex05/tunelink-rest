@@ -1,12 +1,12 @@
 const express = require('express');
 const { prisma } = require('../utils/prisma');
 const { needsAuth, canAuth} = require('../middleware/auth');
-const { extractToken, verifyToken, getAuthenticatedUserId } = require('../utils/jwt');
+const { extractToken, verifyToken } = require('../utils/jwt');
 
 const router = express.Router();
 
 // GET /api/tree/:id - Einzelnen Tree abrufen
-router.get('/:id', canAuth,  async (req, res) => {
+router.get('/:id', canAuth, async (req, res) => {
   try {
     // Try to extract authenticated user (optional)
     
@@ -37,7 +37,7 @@ router.get('/:id', canAuth,  async (req, res) => {
 
     // Check if current user liked this tree (if authenticated)
     let userLiked = false;
-    let currentUserId = getAuthenticatedUserId(req);
+    let currentUserId = req.userId;
     if (currentUserId && tree) {
       const like = await prisma.like.findUnique({
         where: {
@@ -51,14 +51,13 @@ router.get('/:id', canAuth,  async (req, res) => {
     }
     let result = {}
     result.tree = {
-      tree: {
         id: tree.id, 
         title: tree.title, 
         interpret: tree.interpret, 
         album: tree.album || null, 
         description: tree.description, 
         cover: tree.cover || null, 
-        releaseDate: tree.releaseDate, 
+        releaseDate: new Date(tree.releaseDate).toISOString(), 
         ytId: tree.ytId || null, 
         urls: {
           amazonmusic: tree.amazonmusicUrl || null, 
@@ -81,12 +80,58 @@ router.get('/:id', canAuth,  async (req, res) => {
             default: (tree.owner && tree.owner.dummyProfileType) ||  tree.dummyProfileType || null
           }
         },
-        permissions: (req.userId && req.userId == t.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
-      }
+        permissions: (req.userId && req.userId == tree.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
     }
 
     res.status(200).json(result);
   } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get('/:id/edit', needsAuth, async (req, res) => {
+  try {   
+
+    const tree = await prisma.linktree.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if(!tree){
+      res.status(404).json({ message: "Tree not found." });
+      return;
+    }
+
+    if(tree.ownerId !== req.userId){
+      res.status(403).json({ message: "Unauthorized." });
+      return;
+    }
+
+    let result = {}
+    result.tree = {
+        id: tree.id, 
+        title: tree.title, 
+        interpret: tree.interpret, 
+        album: tree.album || null, 
+        description: tree.description, 
+        cover: tree.cover || null, 
+        releaseDate: new Date(tree.releaseDate).toISOString(), 
+        ytId: tree.ytId || null,
+        isPublic: tree.isPublic || null, 
+        urls: {
+          amazonmusic: tree.amazonmusicUrl || null, 
+          applemusic: tree.applemusicUrl || null, 
+          soundcloud: tree.soundcloudUrl || null, 
+          spotify: tree.spotifyUrl || null, 
+          youtube: tree.youtubeUrl || null, 
+          youtubemusic: tree.youtubemusicUrl || null
+        },
+        permissions: {canEdit: true, canDelete: true}
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -112,7 +157,7 @@ router.get('/', needsAuth, async (req, res) => {
       const treeIds = trees.map(t => t.id).filter(Boolean);
       if (treeIds.length > 0) {
         const likes = await prisma.like.findMany({
-          where: { userId: currentUserId, linktreeId: { in: treeIds } },
+          where: { userId: req.userId, linktreeId: { in: treeIds } },
           select: { linktreeId: true }
         });
         likedSet = new Set(likes.map(l => l.linktreeId));
@@ -128,7 +173,7 @@ router.get('/', needsAuth, async (req, res) => {
       album: t.album || null,
       description: t.description,
       cover: t.cover || null,
-      releaseDate: t.releaseDate,
+      releaseDate: new Date(t.releaseDate).toISOString(),
       ytId: t.ytId || null,
       urls: {
         amazonmusic: t.amazonmusicUrl || null,
@@ -163,13 +208,34 @@ router.get('/', needsAuth, async (req, res) => {
 // POST /api/tree - Tree erstellen
 router.post('/', needsAuth, async (req, res) => {
   try {
+    const { urls, ...baseTree } = req.body.tree;
+
+
+    let releaseDate = null;
+
+    if (baseTree.releaseDate) {
+
+      releaseDate = new Date(baseTree.releaseDate).toISOString();
+    }
+
+
     const treeData = {
-      ...req.body,
+      ...baseTree,
+      releaseDate: releaseDate,
+      spotifyUrl: urls.spotify,
+      youtubeUrl: urls.youtube,
+      applemusicUrl: urls.applemusic,
+      amazonmusicUrl: urls.amazonmusic,
+      soundcloudUrl: urls.soundcloud,
+      youtubemusicUrl: urls.youtubemusic,
       ownerId: req.userId
     };
+
     await prisma.linktree.create({ data: treeData });
+
     res.status(200).json({ message: 'Linktree erfolgreich erstellt' });
   } catch (error) {
+    console.log(error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -185,13 +251,37 @@ router.put('/:id', needsAuth, async (req, res) => {
       throw new Error('Unauthorized');
     }
 
+    const { urls, ...baseTree } = req.body.tree;
+
+
+    let releaseDate = null;
+    
+    if (baseTree.releaseDate) {
+    
+      releaseDate = new Date(baseTree.releaseDate).toISOString();
+    }
+  
+  
+    const treeData = {
+      ...baseTree,
+      releaseDate: releaseDate,
+      spotifyUrl: urls.spotify,
+      youtubeUrl: urls.youtube,
+      applemusicUrl: urls.applemusic,
+      amazonmusicUrl: urls.amazonmusic,
+      soundcloudUrl: urls.soundcloud,
+      youtubemusicUrl: urls.youtubemusic,
+      ownerId: req.userId
+    };
+
     await prisma.linktree.update({
       where: { id: req.params.id },
-      data: req.body
+      data: treeData
     });
 
     res.status(200).json({ message: 'Linktree erfolgreich aktualisiert' });
   } catch (error) {
+    console.log(error);
     res.status(400).json({ message: error.message });
   }
 });
