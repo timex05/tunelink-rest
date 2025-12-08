@@ -20,9 +20,10 @@ router.get('/', canAuth, async (req, res) => {
         isPublic: true,
         OR: q
           ? [
-              { title: { contains: q, mode: "insensitive" } },
-              { interpret: { contains: q, mode: "insensitive" } },
-              { album: { contains: q, mode: "insensitive" } },
+              { title: { contains: q } },
+              { interpret: { contains: q } },
+              { album: { contains: q } },
+              { owner: { nickname: { contains: q } } },
             ]
           : undefined,
       },
