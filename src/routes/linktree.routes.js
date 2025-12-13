@@ -86,7 +86,7 @@ router.get('/:id', canAuth, async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -132,7 +132,7 @@ router.get('/:id/edit', needsAuth, async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -201,7 +201,7 @@ router.get('/', needsAuth, async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error(error);
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -233,10 +233,10 @@ router.post('/', needsAuth, async (req, res) => {
 
     await prisma.linktree.create({ data: treeData });
 
-    res.status(200).json({ message: 'Linktree erfolgreich erstellt' });
+    res.status(200).json({ message: 'Tree created.' });
   } catch (error) {
     console.log(error);
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -246,9 +246,13 @@ router.put('/:id', needsAuth, async (req, res) => {
     const tree = await prisma.linktree.findUnique({
       where: { id: req.params.id }
     });
+
+    if(!tree){
+      return res.status(404).json({ message: "Tree not found." });
+    }
     
-    if (!tree || tree.ownerId !== req.userId) {
-      throw new Error('Unauthorized');
+    if (tree.ownerId !== req.userId) {
+      return res.status(403).json({ message: 'Unauthorized.' });
     }
 
     const { urls, ...baseTree } = req.body.tree;
@@ -279,10 +283,10 @@ router.put('/:id', needsAuth, async (req, res) => {
       data: treeData
     });
 
-    res.status(200).json({ message: 'Linktree erfolgreich aktualisiert' });
+    res.status(200).json({ message: 'Tree updated.' });
   } catch (error) {
     console.log(error);
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -292,18 +296,22 @@ router.delete('/:id', needsAuth, async (req, res) => {
     const tree = await prisma.linktree.findUnique({
       where: { id: req.params.id }
     });
+
+    if(!tree){
+      return res.status(404).json({ message: "Tree not found." });
+    }
     
-    if (!tree || tree.ownerId !== req.userId) {
-      throw new Error('Unauthorized');
+    if (tree.ownerId !== req.userId) {
+      return res.status(403).json({ message: 'Unauthorized.' });
     }
 
     await prisma.linktree.delete({
       where: { id: req.params.id }
     });
 
-    res.status(200).json({ message: 'Linktree erfolgreich gelöscht' });
+    res.status(200).json({ message: 'Tree deleted.' });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -316,9 +324,9 @@ router.put('/:id/likes', needsAuth, async (req, res) => {
         linktreeId: req.params.id
       }
     });
-    res.status(200).json({ message: 'Like erfolgreich hinzugefügt' });
+    res.status(200).json({ message: 'Tree liked.' });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -331,9 +339,9 @@ router.delete('/:id/likes', needsAuth, async (req, res) => {
         linktreeId: req.params.id
       }
     });
-    res.status(200).json({ message: 'Like erfolgreich entfernt' });
+    res.status(200).json({ message: 'Tree like removed.' });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -350,7 +358,7 @@ router.get('/:id/comments', canAuth,  async (req, res) => {
     result.commentlist = comments.map(c => ({
       id: c.id,
       message: c.message,
-      createdAt: c.createdAt,
+      created: c.createdAt,
       owner: {
         id: (c.owner && c.owner.id) || c.ownerId || null,
         name: (c.owner && c.owner.nickname) || c.ownerName || null,
@@ -359,7 +367,7 @@ router.get('/:id/comments', canAuth,  async (req, res) => {
           default: (c.owner && c.owner.dummyProfileType) ||  c.dummyProfileType || null
         }
       },
-      permissions: (req.userId && req.userId == c.ownerId ? {canEdit: true, canDelete: true}: {canEdit: false, canDelete: false})
+      permissions: (req.userId && req.userId == c.ownerId ? {canDelete: true}: {canDelete: false})
 
     }))
 
@@ -367,7 +375,7 @@ router.get('/:id/comments', canAuth,  async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -381,9 +389,9 @@ router.put('/:id/comments', needsAuth, async (req, res) => {
         linktreeId: req.params.id
       }
     });
-    res.status(200).json({ message: 'Kommentar erfolgreich erstellt' });
+    res.status(200).json({ message: 'Tree commented.' });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -393,18 +401,21 @@ router.delete('/:id/comments/:commentId', needsAuth, async (req, res) => {
     const comment = await prisma.comment.findUnique({
       where: { id: req.params.commentId }
     });
-    
-    if (!comment || comment.ownerId !== req.userId) {
-      throw new Error('Unauthorized');
+    if(!comment){
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    if (comment.ownerId !== req.userId) {
+      return res.status(403).json({ message: 'Unauthorized.' });
     }
 
     await prisma.comment.delete({
       where: { id: req.params.commentId }
     });
 
-    res.status(200).json({ message: 'Kommentar erfolgreich gelöscht' });
+    res.status(200).json({ message: 'Commend removed.' });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 

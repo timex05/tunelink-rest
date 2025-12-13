@@ -15,7 +15,7 @@ const { sendMail } = require("../utils/mail");
 
 const router = express.Router();
 
-// POST /api/users - User registrieren
+// POST /api/user - User registrieren
 router.post('/', async (req, res) => {
   try {
     const { user } = req.body;
@@ -40,11 +40,11 @@ router.post('/', async (req, res) => {
     res.status(200).json({ message: "User created." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Error" });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
-// POST /api/users/auth - User einloggen
+// POST /api/user/auth - User einloggen
 router.post('/auth', async (req, res) => {
   try {
     const { credentials } = req.body;
@@ -63,7 +63,10 @@ router.post('/auth', async (req, res) => {
       user: {
         id: user.id,
         name: user.nickname,
-        profileImg: user.image || null,
+        profileImg: {
+          url: user.image,
+          default: user.dummyProfileType
+        },
         email: user.email
       }
     });
@@ -73,12 +76,12 @@ router.post('/auth', async (req, res) => {
   }
 });
 
-// DELETE /api/users/auth - User ausloggen
+// DELETE /api/user/auth - User ausloggen
 router.delete('/auth', needsAuth, async (req, res) => {
     res.status(200).json({ message: "Logged out successfully" });
 });
 
-// GET /api/users/me - Eigene User-Daten abrufen
+// GET /api/user/me - Eigene User-Daten abrufen
 router.get('/me', needsAuth, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -102,11 +105,11 @@ router.get('/me', needsAuth, async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(400).json({ message: "Invalid token." });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
-// PUT /api/users/me - Eigene Daten ändern
+// PUT /api/user/me - Eigene Daten ändern
 router.put('/me', needsAuth, async (req, res) => {
   try {
     const { user } = req.body;
@@ -115,10 +118,10 @@ router.put('/me', needsAuth, async (req, res) => {
     if (user.name) updateData.nickname = user.name;
     if (user.email) updateData.email = user.email;
     if (user.password) updateData.password = await encryptPassword(user.password);
-    if (user.profileImg.url !== undefined) updateData.image = user.profileImg.url;
+    if (user.profileImg && user.profileImg.url !== undefined) updateData.image = user.profileImg.url;
     if (user.isNewsLetter !== undefined) updateData.isNewsLetter = user.isNewsLetter;
     if (user.description !== undefined) updateData.description = user.description;
-    if (user.profileImg.default !== undefined) updateData.dummyProfileType = user.profileImg.default;
+    if (user.profileImg && user.profileImg.default !== undefined) updateData.dummyProfileType = user.profileImg.default;
 
     await prisma.user.update({
       where: { id: req.userId },
@@ -127,17 +130,20 @@ router.put('/me', needsAuth, async (req, res) => {
 
     res.status(200).json({ message: "User updated." });
   } catch (error) {
-    res.status(400).json({ message: "Invalid token." });
+    console.error(error);
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
-// GET /api/users/:id - User aufrufen
+// GET /api/user/:id - User aufrufen
 router.get('/:id', async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id }
     });
-    if (!user) throw new Error('User not found');
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
     
     res.status(200).json({
       user: {
@@ -152,7 +158,7 @@ router.get('/:id', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).json({ message: "Invalid token." });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 

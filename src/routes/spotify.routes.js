@@ -51,7 +51,7 @@ router.get("/trackinfo", needsAuth, async (req, res) => {
   const { trackId } = req.query;
 
   if (!trackId) {
-    return res.status(400).json({ message: "Invalid Spotify Track Id" });
+    return res.status(400).json({ message: "Invalid Spotify Track Id." });
   }
 
   let validToken = await getValidToken(); // always get fresh token
@@ -66,7 +66,7 @@ router.get("/trackinfo", needsAuth, async (req, res) => {
   const data = await response.json();
   if(response.status !== 200){
     console.log(data);
-    return res.status(500).json({ message: 'Could not get track info from spotify.' });
+    return res.status(500).json({ message: 'Internal Error' });
   }
 
   const result = {
