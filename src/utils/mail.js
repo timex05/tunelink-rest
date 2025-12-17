@@ -19,4 +19,14 @@ async function sendMail({ to, subject, html }) {
   }
 }
 
+async function sendMailAws(mailData){
+  const maildata = {
+    address: "",
+    template: "",
+    values: {
+      url: ""
+    }
+  }
+}
+
 module.exports = { sendMail }
