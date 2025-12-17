@@ -42,4 +42,4 @@ async function sendMail({ to, subject, html }) {
 
 
 
-module.exports = { sendMail }
+module.exports = { sendMail, sendMailAws }

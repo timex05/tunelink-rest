@@ -7,7 +7,7 @@ const { generateToken, extractToken, invalidateToken } = require('../utils/jwt')
 const { OAuth2Client } = require("google-auth-library");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const { sendMail } = require("../utils/mail");
+const { sendMailAws } = require("../utils/mail");
 
 const cooldown = require("../middleware/requestLimiter");
 
