@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
     });
     res.status(200).json({ message: "Successfully subscribed." });
   } catch (error) {
-    res.status(400).json({ message: "Invalid Email." });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
@@ -30,7 +30,7 @@ router.delete('/:email', async (req, res) => {
     });
     res.status(200).json({ message: "Successfully unsubscribed." });
   } catch (error) {
-    res.status(400).json({ message: "Invalid Email." });
+    res.status(500).json({ message: "Internal Error." });
   }
 });
 
