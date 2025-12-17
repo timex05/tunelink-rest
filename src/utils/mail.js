@@ -2,12 +2,12 @@ const { createTransport } = require('nodemailer');
 const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
 
 const sqs = new SQSClient({
-  region: "eu-central-1"
+  region: process.env.AWS_REGION
 });
 
 async function sendMailAws(mailData){
   const params = {
-    QueueUrl: process.env.AWS_SQS_MAIL,
+    QueueUrl: process.env.AWS_SQS_MAIL_QUEUE_URL,
     MessageBody: JSON.stringify({ mailData: mailData })
   };
   try {
