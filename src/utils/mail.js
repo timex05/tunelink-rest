@@ -1,4 +1,25 @@
 const { createTransport } = require('nodemailer');
+const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
+
+const sqs = new SQSClient({
+  region: "eu-central-1"
+});
+
+async function sendMailAws(mailData){
+  const params = {
+    QueueUrl: process.env.AWS_SQS_MAIL,
+    MessageBody: JSON.stringify({ mailData: mailData })
+  };
+  try {
+    const result = await sqs.send(new SendMessageCommand(params));
+    return { success: true, result };
+  } catch (error) {
+    return { success: false, error };
+  }
+  
+}
+
+
 
 const transport = createTransport({
   host: process.env.MAIL_HOST,
@@ -19,14 +40,6 @@ async function sendMail({ to, subject, html }) {
   }
 }
 
-async function sendMailAws(mailData){
-  const maildata = {
-    address: "",
-    template: "",
-    values: {
-      url: ""
-    }
-  }
-}
+
 
 module.exports = { sendMail }

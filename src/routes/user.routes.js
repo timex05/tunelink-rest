@@ -9,6 +9,8 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const { sendMail } = require("../utils/mail");
 
+const cooldown = require("../middleware/requestLimiter");
+
 
 
 
@@ -304,7 +306,7 @@ router.post('/auth/google', async (req, res) => {
   }
 });
 
-router.post('/auth/forgot', async (req, res) => {
+router.post('/auth/forgot', cooldown(), async (req, res) => {
   const { email, resetUrl } = req.body;
   const user = await prisma.user.findFirst({ 
     where: { email: email, oauthId: null } 
@@ -318,14 +320,17 @@ router.post('/auth/forgot', async (req, res) => {
   const token = generateToken(user.id, '15m');
   const link = `${resetUrl}?token=${token}&email=${user.email}`
 
-  const result = await sendMail({
-    to: user.email,
-    subject: 'Reset your Password',
-    html: `<h1>Reset Your Password</h1> ${link}` 
+  const result = await sendMailAws({
+    template: "reset",
+    destination: email,
+    values: {
+      reset_url: link,
+      expiration_time: "15 Minutes"
+    }
   });
 
   if(result.success){
-    res.status(200).json({ message: 'Mail send.' })
+    res.status(200).json({ message: 'Mail send. Also check ur spam inbox.' })
     return;
   }
   console.error(result.error);
