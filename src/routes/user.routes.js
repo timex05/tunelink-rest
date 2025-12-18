@@ -11,6 +11,8 @@ const { sendMailAws } = require("../utils/mail");
 
 const cooldown = require("../middleware/requestLimiter");
 
+const needsCaptcha = require('../middleware/needsCaptcha');
+
 
 
 
@@ -18,7 +20,8 @@ const cooldown = require("../middleware/requestLimiter");
 const router = express.Router();
 
 // POST /api/user - User registrieren
-router.post('/', async (req, res) => {
+router.post('/', needsCaptcha, async (req, res) => {
+
   try {
     const { user } = req.body;
     const existingUser = await prisma.user.findUnique({ 
@@ -79,12 +82,12 @@ router.post('/auth', async (req, res) => {
 });
 
 // DELETE /api/user/auth - User ausloggen
-router.delete('/auth', needsAuth, async (req, res) => {
+router.delete('/auth', needsAuth(), async (req, res) => {
     res.status(200).json({ message: "Logged out successfully" });
 });
 
 // GET /api/user/me - Eigene User-Daten abrufen
-router.get('/me', needsAuth, async (req, res) => {
+router.get('/me', needsAuth(), async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId }
@@ -112,7 +115,7 @@ router.get('/me', needsAuth, async (req, res) => {
 });
 
 // PUT /api/user/me - Eigene Daten ändern
-router.put('/me', needsAuth, async (req, res) => {
+router.put('/me', needsAuth(), async (req, res) => {
   try {
     const { user } = req.body;
     const updateData = {};
@@ -306,8 +309,11 @@ router.post('/auth/google', async (req, res) => {
   }
 });
 
-router.post('/auth/forgot', cooldown(), async (req, res) => {
+router.post('/auth/forgot', cooldown(), needsCaptcha, async (req, res) => {
   const { email, resetUrl } = req.body;
+
+  
+
   const user = await prisma.user.findFirst({ 
     where: { email: email, oauthId: null } 
   });
@@ -317,12 +323,12 @@ router.post('/auth/forgot', cooldown(), async (req, res) => {
     return;
   } 
 
-  const token = generateToken(user.id, '15m');
+  const token = generateToken(user.id, '15m', 'password-reset');
   const link = `${resetUrl}?token=${token}&email=${user.email}`
 
   const result = await sendMailAws({
     template: "reset",
-    destination: email,
+    destination: user.email,
     values: {
       reset_url: link,
       expiration_time: "15 Minutes"
@@ -337,7 +343,7 @@ router.post('/auth/forgot', cooldown(), async (req, res) => {
   res.status(500).json({ message: 'Could not send Mail.' });  
 });
 
-router.post('/auth/reset', needsAuth, async (req, res) => {
+router.post('/auth/reset', needsAuth('password-reset'), async (req, res) => {
   const { password } = req.body;
   
   try{
@@ -352,7 +358,7 @@ router.post('/auth/reset', needsAuth, async (req, res) => {
     res.status(200).json({ message: "Password changed" });
   } catch (error) {
     console.error(error);
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal Error." });
   } 
 });
 

@@ -90,7 +90,7 @@ router.get('/:id', canAuth, async (req, res) => {
   }
 });
 
-router.get('/:id/edit', needsAuth, async (req, res) => {
+router.get('/:id/edit', needsAuth(), async (req, res) => {
   try {   
 
     const tree = await prisma.linktree.findUnique({
@@ -137,7 +137,7 @@ router.get('/:id/edit', needsAuth, async (req, res) => {
 });
 
 // GET /api/tree - Alle eigenen Trees abrufen
-router.get('/', needsAuth, async (req, res) => {
+router.get('/', needsAuth(), async (req, res) => {
   try {
     const trees = await prisma.linktree.findMany({
       where: { ownerId: req.userId },
@@ -206,7 +206,7 @@ router.get('/', needsAuth, async (req, res) => {
 });
 
 // POST /api/tree - Tree erstellen
-router.post('/', needsAuth, async (req, res) => {
+router.post('/', needsAuth(), async (req, res) => {
   try {
     const { urls, ...baseTree } = req.body.tree;
 
@@ -241,7 +241,7 @@ router.post('/', needsAuth, async (req, res) => {
 });
 
 // PUT /api/tree/:id - Tree bearbeiten
-router.put('/:id', needsAuth, async (req, res) => {
+router.put('/:id', needsAuth(), async (req, res) => {
   try {
     const tree = await prisma.linktree.findUnique({
       where: { id: req.params.id }
@@ -291,7 +291,7 @@ router.put('/:id', needsAuth, async (req, res) => {
 });
 
 // DELETE /api/tree/:id - Tree löschen
-router.delete('/:id', needsAuth, async (req, res) => {
+router.delete('/:id', needsAuth(), async (req, res) => {
   try {
     const tree = await prisma.linktree.findUnique({
       where: { id: req.params.id }
@@ -316,7 +316,7 @@ router.delete('/:id', needsAuth, async (req, res) => {
 });
 
 // PUT /api/tree/:id/likes - Tree liken
-router.put('/:id/likes', needsAuth, async (req, res) => {
+router.put('/:id/likes', needsAuth(), async (req, res) => {
   try {
     await prisma.like.create({
       data: {
@@ -331,7 +331,7 @@ router.put('/:id/likes', needsAuth, async (req, res) => {
 });
 
 // DELETE /api/tree/:id/likes - Tree like löschen
-router.delete('/:id/likes', needsAuth, async (req, res) => {
+router.delete('/:id/likes', needsAuth(), async (req, res) => {
   try {
     await prisma.like.deleteMany({
       where: {
@@ -380,7 +380,7 @@ router.get('/:id/comments', canAuth,  async (req, res) => {
 });
 
 // PUT /api/tree/:id/comments - Tree kommentieren
-router.put('/:id/comments', needsAuth, async (req, res) => {
+router.put('/:id/comments', needsAuth(), async (req, res) => {
   try {
     await prisma.comment.create({
       data: {
@@ -396,7 +396,7 @@ router.put('/:id/comments', needsAuth, async (req, res) => {
 });
 
 // DELETE /api/tree/:id/comments/:commentId - Tree Kommentar löschen
-router.delete('/:id/comments/:commentId', needsAuth, async (req, res) => {
+router.delete('/:id/comments/:commentId', needsAuth(), async (req, res) => {
   try {
     const comment = await prisma.comment.findUnique({
       where: { id: req.params.commentId }

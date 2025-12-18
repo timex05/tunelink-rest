@@ -5,7 +5,7 @@ const { needsAuth, canAuth } = require('../middleware/auth');
 const router = express.Router();
 
 // GET /api/like/tree - Alle gelikete Trees
-router.get('/tree', needsAuth, async (req, res) => {
+router.get('/tree', needsAuth(), async (req, res) => {
   try {
     const likedTrees = await prisma.linktree.findMany({
       where: {

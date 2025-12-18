@@ -5,7 +5,7 @@ const { needsAuth, canAuth} = require('../middleware/auth')
 const router = express.Router();
 
 // GET /api/comment/tree - Alle kommentierte Trees
-router.get('/tree', needsAuth, async (req, res) => {
+router.get('/tree', needsAuth(), async (req, res) => {
   try {
     const commentedTrees = await prisma.linktree.findMany({
       where: {

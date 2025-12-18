@@ -47,7 +47,7 @@ async function getSongInfo(trackId, token) {
   return response;
 }
 
-router.get("/trackinfo", needsAuth, async (req, res) => {
+router.get("/trackinfo", needsAuth(), async (req, res) => {
   const { trackId } = req.query;
 
   if (!trackId) {

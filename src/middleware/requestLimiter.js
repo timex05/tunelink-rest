@@ -22,17 +22,17 @@ const cooldownMiddleware = (baseWaitTimeMs = 1000, maxWaitTimeMs = 2 * 60 * 60 *
     let state = userState.get(key) || { lastTime: 0, attempts: 0 };
 
     const waitTime = Math.min(baseWaitTimeMs * 2 ** state.attempts, maxWaitTimeMs);
+    console.log(`RequestLimiter: User ${key} has made ${state.attempts} attempts. Wait time is ${waitTime}ms.`);
 
     if (now - state.lastTime < waitTime) {
       const remaining = Math.ceil((waitTime - (now - state.lastTime)) / 1000);
-      re
       return res.status(429).json({
         message: `Please wait ${formatTime(remaining)} before calling this route again.`
       });
     }
 
     // Reset attempt if cooldown has passed
-    if (now - state.lastTime >= waitTime) {
+    if (now - state.lastTime >= waitTime && state.attempts > 5) {
       state.attempts = 0;
     } else {
       state.attempts += 1;
