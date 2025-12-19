@@ -88,7 +88,7 @@ router.post('/', needsCaptcha, async (req, res) => {
 // POST /api/user/auth - User einloggen
 router.post('/auth', needsCaptcha,  async (req, res) => {
   try {
-    const { credentials } = req.body;
+    const { credentials, website_url } = req.body;
     const user = await prisma.user.findUnique({ 
       where: { email: credentials.email } 
     });
@@ -100,6 +100,27 @@ router.post('/auth', needsCaptcha,  async (req, res) => {
     if(user.state === 'PENDING_CONFIRMATION'){
       return res.status(403).json({ message: "Please confirm your email address first. Check Your Inbox." });
     }
+
+    if(user.lastlogin === null){
+      // First Login
+      const result = await sendMailAws({
+        destination: user.email,
+        template: 'welcome',
+        values: {
+          username: user.nickname,
+          website_url: website_url
+        }
+      });
+      if (!result.success) {
+        console.error("Failed to send welcome email:", result.error);
+      }
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastlogin: new Date().toISOString()
+      }
+    });
 
     const token = generateToken(user.id);
 
@@ -339,6 +360,12 @@ router.post('/auth/google', async (req, res) => {
 
     if(googleUser){
       const token = generateToken(googleUser.id);
+      await prisma.user.update({
+        where: { id: googleUser.id },
+        data: {
+          lastlogin: new Date().toISOString()
+        }
+      });
       res.status(200).json({
         token: {value: token, validInMinutes: 1440 }, // 24 hours 
         user: {

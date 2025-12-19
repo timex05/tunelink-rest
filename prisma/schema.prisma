@@ -49,6 +49,7 @@ model User {
   isNewsLetter      Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  lastlogin         DateTime? 
   state             State     @default(ACTIVE)
 
   // Relations
