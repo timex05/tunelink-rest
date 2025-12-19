@@ -19,6 +19,12 @@ enum Role {
   ADMIN
 }
 
+enum State {
+  ACTIVE
+  PENDING_CONFIRMATION
+  SUSPEND
+}
+
 enum DummyProfileType {
   MALE
   FEMALE
@@ -43,6 +49,7 @@ model User {
   isNewsLetter      Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  state             State     @default(ACTIVE)
 
   // Relations
   linktrees     Linktree[]  @relation("owner")

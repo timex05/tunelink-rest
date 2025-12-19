@@ -23,7 +23,7 @@ const router = express.Router();
 router.post('/', needsCaptcha, async (req, res) => {
 
   try {
-    const { user } = req.body;
+    const { user, website_url, confirm_url } = req.body;
     const existingUser = await prisma.user.findUnique({ 
       where: { email: user.email } 
     });
@@ -33,16 +33,52 @@ router.post('/', needsCaptcha, async (req, res) => {
     }
 
     const hashedPassword = await encryptPassword(user.password);
-    
-    await prisma.user.create({
-      data: {
-        email: user.email,
-        password: hashedPassword,
-        nickname: user.name
-      }
-    });
 
-    res.status(200).json({ message: "User created." });
+    if(confirm_url === undefined || confirm_url.length == ""){
+    
+      await prisma.user.create({
+        data: {
+          email: user.email,
+          password: hashedPassword,
+          nickname: user.name
+        }
+      });
+      const result = await sendMailAws({
+        destination: user.email,
+        template: 'welcome',
+        values: {
+          username: user.name,
+          website_url: website_url
+        }
+      });
+      if (!result.success) {
+        console.error("Failed to send welcome email:", result.error);
+      }
+
+      return res.status(200).json({ message: "User created." });
+    } else {
+      const new_user = await prisma.user.create({
+        data: {
+          email: user.email,
+          password: hashedPassword,
+          nickname: user.name,
+          state: 'PENDING_CONFIRMATION'
+        }
+      });
+      const result = await sendMailAws({
+        destination: user.email,
+        template: 'confirm',
+        values: {
+          username: user.name,
+          confirm_url: `${confirm_url}?token=${generateToken(new_user.id, '24h', 'email-confirmation')}&email=${user.email}`,
+          expiration_time: "24 Hours"
+        }
+      });
+      if (!result.success) {
+        console.error("Failed to send welcome email:", result.error);
+      }
+      return res.status(200).json({ message: "User created. Please confirm your email." });
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Error." });
@@ -50,7 +86,7 @@ router.post('/', needsCaptcha, async (req, res) => {
 });
 
 // POST /api/user/auth - User einloggen
-router.post('/auth', async (req, res) => {
+router.post('/auth', needsCaptcha,  async (req, res) => {
   try {
     const { credentials } = req.body;
     const user = await prisma.user.findUnique({ 
@@ -59,6 +95,10 @@ router.post('/auth', async (req, res) => {
     
     if (!user || !(await comparePassword(credentials.password, user.password))) {
       return res.status(400).json({ message: "Invalid credentials." });
+    }
+
+    if(user.state === 'PENDING_CONFIRMATION'){
+      return res.status(403).json({ message: "Please confirm your email address first. Check Your Inbox." });
     }
 
     const token = generateToken(user.id);
@@ -84,6 +124,45 @@ router.post('/auth', async (req, res) => {
 // DELETE /api/user/auth - User ausloggen
 router.delete('/auth', needsAuth(), async (req, res) => {
     res.status(200).json({ message: "Logged out successfully" });
+});
+
+router.put('/confirm', needsAuth('email-confirmation'), async (req, res) => {
+  try {
+    const { website_url } = req.body;
+    console.log("UserId: " + req.userId);
+    const user = await prisma.user.findUnique({ 
+      where: { id: req.userId }
+    });
+    if(!user){
+      return res.status(400).json({ message: "User not found." });
+    }
+
+    await prisma.user.update({
+      where: { id: req.userId },
+      data: {
+        state: 'ACTIVE'
+      }
+    });
+
+    const result = await sendMailAws({
+      destination: user.email,
+      template: 'welcome',
+      values: {
+        username: user.nickname,
+        website_url: website_url
+      }
+    });
+
+    if (!result.success) {
+      console.error("Failed to send welcome email:", result.error);
+    }
+
+    return res.status(200).json({ message: "Email confirmed." });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Error." });
+  }
 });
 
 // GET /api/user/me - Eigene User-Daten abrufen
@@ -236,7 +315,7 @@ router.get('/:id/tree', canAuth, async (req, res) => {
 });
 
 router.post('/auth/google', async (req, res) => {
-  const { googleToken } = req.body;
+  const { googleToken, website_url } = req.body;
   try {
     // Google ID Token prüfen
     const ticket = await googleClient.verifyIdToken({
@@ -290,6 +369,18 @@ router.post('/auth/google', async (req, res) => {
         oauthProvider: 'GOOGLE'
       }
     });
+    const result = await sendMailAws({
+      destination: user.email,
+      template: 'welcome',
+      values: {
+        username: user.nickname,
+        website_url: website_url
+      }
+    });
+
+    if (!result.success) {
+      console.error("Failed to send welcome email:", result.error);
+    }
 
     const token = generateToken(user.id);
     res.status(200).json({

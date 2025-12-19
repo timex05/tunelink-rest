@@ -27,11 +27,13 @@ const canAuth = (req, res, next) => {
   try {
     const token = extractToken(req);
     console.log("Token: " + token);
-    const decoded = verifyToken(token);
+    if(token){
+      const decoded = verifyToken(token);
+      req.userId = decoded.userId;
+      req.token = decoded;
+      console.log("userId: " + req.userId);
+    }
     
-    req.userId = decoded.userId;
-    req.token = decoded;
-    console.log("userId: " + req.userId);
     
   } catch (error) {
     console.error(error);

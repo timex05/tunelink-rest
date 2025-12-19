@@ -2,7 +2,7 @@ const { verifyCaptcha } = require("../utils/captcha");
 
 const needsCaptcha = async (req, res, next) => {
     try {
-        const { captchaToken } = req.body;
+        let { captchaToken } = req.body;
         captchaToken = captchaToken || req.query.captchaToken;
         if (!captchaToken) {
             return res.status(400).json({ error: "Captcha token missing." });
