@@ -90,7 +90,11 @@ ISC
 
 - [TuneLink Mulit Page Application (mpa)](https://github.com/timex05/tunelink-mpa)
 - [TuneLink Single Page Application (spa)](https://github.com/timex05/tunelink-spa)
+- [TuneLink Static Files](https://github.com/timex05/tunelink-static)
 
 ### Backend
 
 - [TuneLink REST-Api](https://github.com/timex05/tunelink-rest)
+
+### GraphQL
+- [TuneLink GraphQL](https://github.com/timex05/tunelink-graphql)
