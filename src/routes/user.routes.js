@@ -32,6 +32,14 @@ router.post('/', needsCaptcha, async (req, res) => {
       return res.status(400).json({ message: "Email exists already." });
     }
 
+     existingUser = await prisma.user.findUnique({ 
+      where: { nickname: user.name } 
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ message: "Nickname exists already." });
+    }
+
     const hashedPassword = await encryptPassword(user.password);
 
     if(confirm_url === undefined || confirm_url.length == ""){
