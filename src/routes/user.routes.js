@@ -24,7 +24,7 @@ router.post('/', needsCaptcha, async (req, res) => {
 
   try {
     const { user, website_url, confirm_url } = req.body;
-    const existingUser = await prisma.user.findUnique({ 
+    let existingUser = await prisma.user.findUnique({ 
       where: { email: user.email } 
     });
 
