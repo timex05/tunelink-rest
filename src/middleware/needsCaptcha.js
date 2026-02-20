@@ -5,7 +5,10 @@ const needsCaptcha = async (req, res, next) => {
         let { captchaToken } = req.body;
         captchaToken = captchaToken || req.query.captchaToken;
         if (!captchaToken) {
-            return res.status(400).json({ error: "Captcha token missing." });
+            console.log("Captcha Token Missing");
+            next();
+            return;
+            // return res.status(400).json({ error: "Captcha token missing." });
         }
         const [success, valid] = await verifyCaptcha(captchaToken);
         if(!success){
