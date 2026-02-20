@@ -8,9 +8,6 @@ const router = express.Router();
 // GET /api/tree/:id - Einzelnen Tree abrufen
 router.get('/:id', canAuth, async (req, res) => {
   try {
-    // Try to extract authenticated user (optional)
-    
-
     const tree = await prisma.linktree.findUnique({
       where: { id: req.params.id, isPublic: true },
       include: {
@@ -29,13 +26,11 @@ router.get('/:id', canAuth, async (req, res) => {
       return;
     }
     
-    // Increment clicks
     await prisma.linktree.update({
       where: { id: req.params.id },
       data: { clicks: { increment: 1 } }
     });
 
-    // Check if current user liked this tree (if authenticated)
     let userLiked = false;
     let currentUserId = req.userId;
     if (currentUserId && tree) {

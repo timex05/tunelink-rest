@@ -4,8 +4,6 @@ const { needsAuth, canAuth} = require('../middleware/auth')
 
 const router = express.Router();
 
-
-// ToDo: überprüfen
 router.get('/', canAuth, async (req, res) => {
   try {
     const q = (req.query.q || req.query.search || "").trim();
@@ -14,7 +12,6 @@ router.get('/', canAuth, async (req, res) => {
 
     const authUserId = req.userId || null;
 
-    // 🟦 1. Linktrees aus DB holen
     const trees = await prisma.linktree.findMany({
       where: {
         isPublic: true,
@@ -34,14 +31,11 @@ router.get('/', canAuth, async (req, res) => {
       },
     });
 
-    // 🟩 2. Transformieren + relevance berechnen
     const result = trees.map(tree => {
       const likeCount = tree.likes.length;
       const commentCount = tree.comments.length;
       const clickCount = tree.clicks;
 
-      // ⭐ Relevance Score
-      // Gewichtung kannst du ändern wie du willst
       const relevance =
         likeCount * 3 +
         commentCount * 5 +
@@ -79,7 +73,6 @@ router.get('/', canAuth, async (req, res) => {
       };
     });
 
-    // 🟧 3. Sortierung anwenden
     if (sort === "likes") {
       result.sort((a, b) =>
         dir === "asc"
@@ -106,7 +99,6 @@ router.get('/', canAuth, async (req, res) => {
       );
     }
 
-    // 🟦 FINAL OUTPUT
     return res.status(200).json({ treelist: result });
 
   } catch (err) {

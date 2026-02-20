@@ -21,7 +21,6 @@ const verifyToken = (token) => {
   }
 };
 
-// Token aus Authorization Header extrahieren
 const extractToken = (req) => {
   let { token } = req.body;
   if(!token){

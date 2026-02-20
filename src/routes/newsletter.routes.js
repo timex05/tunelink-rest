@@ -133,7 +133,7 @@ router.put('/', adminAuth, async (req, res) => {
   try {
     const { message } = req.body;
     // Hier würde die eigentliche Email-Versand-Logik implementiert werden
-    // z.B. mit nodemailer oder einem Email-Service
+    // z.B. AWS SES
 
     res.status(200).json({ message: "Newsletter sent." });
   } catch (error) {

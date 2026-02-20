@@ -16,19 +16,16 @@ const spotifyRoutes = require("./routes/spotify.routes");
 
 const app = express();
 
-// 🧩 Middleware
-app.use(helmet()); // Sicherheitsheader
+app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-// 🔌 Datenbank prüfen
 prisma.$connect()
   .then(() => console.log("✅ Connected to database"))
   .catch((err) => console.error("❌ Database connection error:", err));
 
-// 📦 Routes
 app.use("/api/user", userRoutes);
 app.use("/api/tree", treeRoutes);
 app.use("/api/front", frontRoutes)
@@ -38,12 +35,10 @@ app.use("/api/newsletter", newsletterRoutes);
 app.use("/api/spotify", spotifyRoutes);
 
 
-// 🔁 Health Check
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "API online" });
 });
 
-// ❗ Fehler-Handler (optional)
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Internal server error" });
